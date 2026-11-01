@@ -2,7 +2,7 @@
 
 import asyncio
 from datetime import timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from freezegun.api import FrozenDateTimeFactory
 from pysmlight import Firmware, Info, Radio
@@ -94,6 +94,37 @@ async def test_update_setup(
     await snapshot_platform(hass, entity_registry, snapshot, entry.entry_id)
 
     await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_unsupported_radio_catalog(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_smlight_client: MagicMock,
+) -> None:
+    """Test unsupported slots are skipped without shifting supported catalogs."""
+    info = mock_smlight_client.get_info.side_effect()
+    info.radios = [
+        Radio(zb_type=-1, chip_index=0),
+        Radio(zb_type=0, chip_index=1),
+        Radio(zb_type=-1, chip_index=2),
+        Radio(zb_type=1, chip_index=3),
+    ]
+    mock_smlight_client.get_info.side_effect = None
+    mock_smlight_client.get_info.return_value = info
+
+    entry = await setup_integration(hass, mock_config_entry)
+
+    assert mock_smlight_client.get_firmware_version.await_args_list == [
+        call(info.fw_channel, device=info.model),
+        call(info.fw_channel, device=info.model, mode="zigbee", zb_type=0, idx=1),
+        call(info.fw_channel, device=info.model, mode="zigbee", zb_type=1, idx=3),
+    ]
+    catalogs = entry.runtime_data.firmware.data.zb_firmware
+    assert len(catalogs) == 4
+    assert catalogs[0] == []
+    assert catalogs[1][0].ver == "20250201"
+    assert catalogs[2] == []
+    assert catalogs[3][0].ver == "20240716"
 
 
 @patch("homeassistant.components.smlight.update.asyncio.sleep", return_value=None)
