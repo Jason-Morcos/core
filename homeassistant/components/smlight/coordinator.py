@@ -219,9 +219,9 @@ class SmFirmwareUpdateCoordinator(SmBaseDataUpdateCoordinator[SmFwData]):
         assert info.radios is not None
         # Defer cloud discovery until the platforms have loaded.
         if not self.data:
-            return SmFwData(info=info, esp_firmware=None, zb_firmware=[])
+            return SmFwData(info=info, esp_firmware=[], zb_firmware=[])
 
-        esp_firmware = None
+        esp_firmware: FirmwareList = []
         zb_firmware: list[FirmwareList] = []
 
         try:
