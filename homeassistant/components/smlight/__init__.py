@@ -65,7 +65,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SmConfigEntry) -> None:
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    if info.legacy_api != 2:
+    if info.legacy_api < 2:
         entry.async_create_background_task(
             hass, firmware_coordinator.async_refresh(), "smlight-firmware-catalog"
         )

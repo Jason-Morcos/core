@@ -97,8 +97,7 @@ async def test_update_setup(
     snapshot: SnapshotAssertion,
 ) -> None:
     """Test setup of SMLIGHT update entities."""
-    entry = await setup_integration(hass, mock_config_entry)
-    await hass.async_block_till_done(wait_background_tasks=True)
+    entry = await setup_integration(hass, mock_config_entry, wait_for_background=True)
 
     await snapshot_platform(hass, entity_registry, snapshot, entry.entry_id)
 
@@ -123,8 +122,7 @@ async def test_firmware_catalog_failure_recovery(
     get_firmware = mock_smlight_client.get_firmware_version.side_effect
     mock_smlight_client.get_firmware_version.side_effect = error
 
-    entry = await setup_integration(hass, mock_config_entry)
-    await hass.async_block_till_done(wait_background_tasks=True)
+    entry = await setup_integration(hass, mock_config_entry, wait_for_background=True)
 
     assert entry.state is ConfigEntryState.LOADED
     assert (
@@ -165,8 +163,7 @@ async def test_installed_version_updates_without_firmware_catalog(
     mock_smlight_client.get_firmware_version.side_effect = None
     mock_smlight_client.get_firmware_version.return_value = []
 
-    await setup_integration(hass, mock_config_entry)
-    await hass.async_block_till_done(wait_background_tasks=True)
+    await setup_integration(hass, mock_config_entry, wait_for_background=True)
 
     entity_id = "update.mock_title_core_firmware"
     state = hass.states.get(entity_id)
@@ -200,8 +197,7 @@ async def test_update_firmware(
     mock_smlight_client: MagicMock,
 ) -> None:
     """Test firmware updates."""
-    await setup_integration(hass, mock_config_entry)
-    await hass.async_block_till_done(wait_background_tasks=True)
+    await setup_integration(hass, mock_config_entry, wait_for_background=True)
     entity_id = "update.mock_title_core_firmware"
     state = hass.states.get(entity_id)
     assert state.state == STATE_ON
@@ -255,8 +251,7 @@ async def test_update_zigbee2_firmware(
     )
     mock_smlight_client.get_info.side_effect = None
     mock_smlight_client.get_info.return_value = mock_info
-    await setup_integration(hass, mock_config_entry)
-    await hass.async_block_till_done(wait_background_tasks=True)
+    await setup_integration(hass, mock_config_entry, wait_for_background=True)
     entity_id = "update.mock_title_zigbee_firmware_2"
     state = hass.states.get(entity_id)
     assert state.state == STATE_ON
@@ -301,8 +296,7 @@ async def test_update_legacy_firmware_v2(
         legacy_api=1,
         MAC="AA:BB:CC:DD:EE:FF",
     )
-    await setup_integration(hass, mock_config_entry)
-    await hass.async_block_till_done(wait_background_tasks=True)
+    await setup_integration(hass, mock_config_entry, wait_for_background=True)
     entity_id = "update.mock_title_core_firmware"
     state = hass.states.get(entity_id)
     assert state.state == STATE_ON
@@ -343,8 +337,7 @@ async def test_update_firmware_failed(
     mock_smlight_client: MagicMock,
 ) -> None:
     """Test firmware updates."""
-    await setup_integration(hass, mock_config_entry)
-    await hass.async_block_till_done(wait_background_tasks=True)
+    await setup_integration(hass, mock_config_entry, wait_for_background=True)
     entity_id = "update.mock_title_core_firmware"
     state = hass.states.get(entity_id)
     assert state.state == STATE_ON
@@ -378,8 +371,7 @@ async def test_update_reboot_timeout(
     mock_smlight_client: MagicMock,
 ) -> None:
     """Test reboot timeout raises a translated user-facing error."""
-    await setup_integration(hass, mock_config_entry)
-    await hass.async_block_till_done(wait_background_tasks=True)
+    await setup_integration(hass, mock_config_entry, wait_for_background=True)
     entity_id = "update.mock_title_core_firmware"
     state = hass.states.get(entity_id)
     assert state.state == STATE_ON
@@ -445,8 +437,7 @@ async def test_update_release_notes(
     mock_smlight_client.get_info.return_value = Info.from_dict(
         await async_load_json_object_fixture(hass, "info-MR1.json", DOMAIN)
     )
-    await setup_integration(hass, mock_config_entry)
-    await hass.async_block_till_done(wait_background_tasks=True)
+    await setup_integration(hass, mock_config_entry, wait_for_background=True)
     ws_client = await hass_ws_client(hass)
     await hass.async_block_till_done()
 
@@ -477,8 +468,7 @@ async def test_update_blank_release_notes(
     mock_smlight_client.get_firmware_version.side_effect = None
     mock_smlight_client.get_firmware_version.return_value = MOCK_FIRMWARE_NOTES
 
-    await setup_integration(hass, mock_config_entry)
-    await hass.async_block_till_done(wait_background_tasks=True)
+    await setup_integration(hass, mock_config_entry, wait_for_background=True)
     ws_client = await hass_ws_client(hass)
     await hass.async_block_till_done()
 
