@@ -238,6 +238,8 @@ class SmFirmwareUpdateCoordinator(SmBaseDataUpdateCoordinator[SmFwData]):
             )
 
         except SmlightConnectionError as err:
+            if self.data:
+                raise
             self.async_set_update_error(err)
 
         return SmFwData(
