@@ -196,7 +196,7 @@ async def test_async_setup_no_internet(
     side_effect = mock_smlight_client.get_firmware_version.side_effect
     mock_smlight_client.get_firmware_version.side_effect = SmlightConnectionError
 
-    await setup_integration(hass, mock_config_entry_host, wait_for_background=True)
+    await setup_integration(hass, mock_config_entry_host)
 
     entity = hass.states.get("update.mock_title_core_firmware")
     assert entity is not None
@@ -236,7 +236,7 @@ async def test_slow_firmware_catalog_does_not_block_setup(
         return get_firmware(*args, **kwargs)
 
     mock_smlight_client.get_firmware_version.side_effect = slow_catalog
-    entry = await setup_integration(hass, mock_config_entry)
+    entry = await setup_integration(hass, mock_config_entry, wait_for_background=False)
 
     assert entry.state is ConfigEntryState.LOADED
     state = hass.states.get("sensor.mock_title_core_chip_temp")
@@ -274,7 +274,7 @@ async def test_unload_cancels_firmware_catalog(
         return []
 
     mock_smlight_client.get_firmware_version.side_effect = pending_catalog
-    entry = await setup_integration(hass, mock_config_entry)
+    entry = await setup_integration(hass, mock_config_entry, wait_for_background=False)
     await catalog_started.wait()
 
     assert entry.state is ConfigEntryState.LOADED

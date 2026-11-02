@@ -174,7 +174,7 @@ async def setup_integration(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     *,
-    wait_for_background: bool = False,
+    wait_for_background: bool = True,
 ) -> MockConfigEntry:
     """Set up the integration."""
     mock_config_entry.add_to_hass(hass)
