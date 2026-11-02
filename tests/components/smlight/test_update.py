@@ -111,36 +111,43 @@ async def test_catalog_connection_error_recovery(
     mock_config_entry: MockConfigEntry,
     mock_smlight_client: MagicMock,
     freezer: FrozenDateTimeFactory,
+    caplog: pytest.LogCaptureFixture,
     failed_catalog: int,
 ) -> None:
-    """Test a catalog connection failure stays failed until the next success."""
-    entry = await setup_integration(hass, mock_config_entry)
-    coordinator = entry.runtime_data.firmware
+    """Test catalog connection errors preserve availability and recover."""
+    await setup_integration(hass, mock_config_entry)
+    assert hass.states.get("update.mock_title_core_firmware").state == STATE_ON
+    assert hass.states.get("update.mock_title_zigbee_firmware").state == STATE_ON
+
     get_firmware = mock_smlight_client.get_firmware_version.side_effect
     mock_smlight_client.get_firmware_version.side_effect = [
         *([[]] * failed_catalog),
-        SmlightConnectionError,
+        SmlightConnectionError("Catalog unavailable"),
     ]
 
     freezer.tick(SCAN_FIRMWARE_INTERVAL)
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
 
-    assert not coordinator.last_update_success
-    assert isinstance(coordinator.last_exception.__cause__, SmlightConnectionError)
-    assert hass.states.get("update.mock_title_core_firmware").state == STATE_UNAVAILABLE
+    assert "Catalog unavailable" in caplog.text
+    assert hass.states.get("update.mock_title_core_firmware").state != STATE_UNAVAILABLE
     assert (
-        hass.states.get("update.mock_title_zigbee_firmware").state == STATE_UNAVAILABLE
+        hass.states.get("update.mock_title_zigbee_firmware").state != STATE_UNAVAILABLE
     )
 
     mock_smlight_client.get_firmware_version.side_effect = get_firmware
+    info = mock_smlight_client.get_info.side_effect()
+    info.sw_version = "v2.7.5"
+    info.radios[0].zb_version = "20250201"
+    mock_smlight_client.get_info.side_effect = None
+    mock_smlight_client.get_info.return_value = info
+
     freezer.tick(SCAN_FIRMWARE_INTERVAL)
     async_fire_time_changed(hass)
     await hass.async_block_till_done()
 
-    assert coordinator.last_update_success
-    assert hass.states.get("update.mock_title_core_firmware").state == STATE_ON
-    assert hass.states.get("update.mock_title_zigbee_firmware").state == STATE_ON
+    assert hass.states.get("update.mock_title_core_firmware").state == STATE_OFF
+    assert hass.states.get("update.mock_title_zigbee_firmware").state == STATE_OFF
 
 
 @patch("homeassistant.components.smlight.update.asyncio.sleep", return_value=None)

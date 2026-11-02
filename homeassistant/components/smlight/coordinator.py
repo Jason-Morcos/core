@@ -238,9 +238,7 @@ class SmFirmwareUpdateCoordinator(SmBaseDataUpdateCoordinator[SmFwData]):
             )
 
         except SmlightConnectionError as err:
-            if self.data:
-                raise
-            self.async_set_update_error(err)
+            LOGGER.error("Error fetching firmware catalog for %s: %s", self.name, err)
 
         return SmFwData(
             info=info,
